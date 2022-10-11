@@ -1,4 +1,5 @@
 from typing import Dict, List, Tuple
+from typing import Protocol, runtime_checkable
 
 import Levenshtein as lev
 
@@ -10,10 +11,22 @@ from sentence_transformers import SentenceTransformer, util
 import pickle
 
 
-class TextSimilarityTr:
+@runtime_checkable
+class Comparator(Protocol):
+    def __init__(self) :
+        pass
 
-    def __init__(self, model_name) -> None:
-        self.encoder = SentenceTransformer(model_name)
+    def encode(self):
+        pass
+
+    def similarity(self):
+        pass
+
+'''Compares texts using pre-trained language model.'''
+class TextComparatorLM:
+
+    def __init__(self):
+        self.encoder = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 
     def encode(self, text: str) -> bytes:
         encoding = self.encoder.encode(text, convert_to_tensor=True)
@@ -30,9 +43,9 @@ class TextSimilarityTr:
         return similarity
 
 
-class ImageSimilarity:
+class ImageComparator:
 
-    def __init__(self) -> None:
+    def __init__(self):
         # self.device = torch.device("cpu")
         self.numberFeatures = 512
         self.max_channel = 3
@@ -72,8 +85,15 @@ class ImageSimilarity:
         similarity = similarity.item()
         return similarity
 
+'''Compares texts using Levenstein Distance.'''
+class TextComparatorLD:
 
-class TextSimilarityLev:
+    def __init__(self):
+        pass
+
+    def encode(self):
+        pass
+
     def distance(self, str1: str, str2: str) -> int:
         if not str1: return float('inf')
         if not str2: return float('inf')

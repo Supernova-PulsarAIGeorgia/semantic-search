@@ -1,12 +1,5 @@
 {
-    "database": {
-        "connection_string" : "mongodb://vps.sunney.dev:27017/cib?directConnection=true"
-    },
     "language_model": {
         "name" : "paraphrase-multilingual-MiniLM-L12-v2"
-    },
-    "score_weights": {
-        "image_weight" : 0.5,
-        "message_weight" : 0.5
     }
 }
