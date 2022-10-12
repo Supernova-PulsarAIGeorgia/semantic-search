@@ -8,7 +8,6 @@ from torchvision import transforms, models
 import torch
 
 from sentence_transformers import SentenceTransformer, util
-import pickle
 
 
 @runtime_checkable
@@ -59,21 +58,19 @@ class TextComparatorLM:
     def __init__(self):
         self.encoder = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 
-    def encode(self, text: str) -> bytes:
+    def encode(self, text: str) -> torch.Tensor:
         encoding = self.encoder.encode(text, convert_to_tensor=True)
-        encoding = pickle.dumps(encoding)
         return encoding
 
-    def similarity(self, str1: Union[bytes, str], str2: Union[bytes, str]) -> float:
-        if type(str1) == bytes:
-            encoding1 = pickle.loads(str1)
+    def _get_encoding(self, text: Union[torch.Tensor, str]):
+        if type(text) == torch.Tensor:
+            return text
         else:
-            encoding1 = self.encoder.encode(str1, convert_to_tensor=True)
+            return self.encode(text=text)
 
-        if type(str2) == bytes:
-            encoding2 = pickle.loads(str2)
-        else:
-            encoding2 = self.encoder.encode(str2, convert_to_tensor=True)
+    def similarity(self, str1: Union[torch.Tensor, str], str2: Union[torch.Tensor, str]) -> float:
+        encoding1 = self._get_encoding(str1)
+        encoding2 = self._get_encoding(str2)
 
         similarity = util.pytorch_cos_sim(encoding1, encoding2)
         similarity = similarity.item()
@@ -84,20 +81,17 @@ class TextComparatorLM:
 class ImageComparator:
 
     def __init__(self):
-        # self.device = torch.device("cpu")
         self.numberFeatures = 512
         self.max_channel = 3
-        # self.modelName = "resnet-18"
         self.model = models.resnet18(weights='ResNet18_Weights.DEFAULT')
         self.featureLayer = self.model._modules.get('avgpool')
-        # self.model = self.model.to(self.device
         self.model.eval()
         self.toTensor = transforms.ToTensor()
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         self.transformationForInput = transforms.Compose([transforms.Resize((224,224))])
         self.similarity_function = torch.nn.CosineSimilarity(dim = 0)
 
-    def encode(self, image: Image) -> bytes:
+    def encode(self, image: Image.Image) -> torch.Tensor:
         image = self.transformationForInput(image)
         image_ts = self.toTensor(image)
         if image_ts.size()[0] > self.max_channel:
@@ -112,12 +106,17 @@ class ImageComparator:
         handle.remove()
 
         encoding = embedding[0, :, 0, 0]
-        encoding = pickle.dumps(encoding)
         return encoding
 
-    def similarity(self, encoding1: bytes, encoding2: bytes) -> float:
-        encoding1 = pickle.loads(encoding1)
-        encoding2 = pickle.loads(encoding2)
+    def _get_encoding(self, image: Union[torch.Tensor, Image.Image]):
+        if type(image) == torch.Tensor:
+            return image
+        else:
+            return self.encode(image=image)
+
+    def similarity(self, img1: Union[torch.Tensor, Image.Image], img2: Union[torch.Tensor, Image.Image]) -> float:
+        encoding1 = self._get_encoding(img1)
+        encoding2 = self._get_encoding(img2)
 
         similarity = util.pytorch_cos_sim(encoding1, encoding2)
         similarity = similarity.item()
