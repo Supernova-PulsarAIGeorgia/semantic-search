@@ -32,20 +32,13 @@ class ImageStorage():
         pass
 
 
-@dataclass
-class Text:
-    body: str
-    encoding: bytes
-
-
 class TextStorage():
     def __init__(self, src: str):
         self.texts = json.load(open(src))
-        self.texts = [Text(t['body'], t['encoding']) for t in self.texts]
 
-    def append(self, text: Text):
+    def append(self, text: str):
         self.texts.append(text)
-        # TODO: persist texts
+        # persist texts here
 
     def __iter__(self):
         return TextStorageIterator(self)
@@ -66,11 +59,3 @@ class TextStorageIterator:
             self._index +=1
             return result
        raise StopIteration
-
-
-if __name__ == "__main__":
-    a = TextStorage('texts.json')
-    print(isinstance(a, Storage))
-    a.append(Text(2, 'a', ''))
-    for t in a:
-        print(t)

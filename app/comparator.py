@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 from typing import Protocol, runtime_checkable
 
 import Levenshtein as lev
@@ -22,6 +22,37 @@ class Comparator(Protocol):
     def similarity(self):
         pass
 
+
+'''Compares texts using Levenstein Distance.'''
+class TextComparatorLD:
+
+    def __init__(self):
+        pass
+
+    def encode(self):
+        pass
+
+    def distance(self, str1: str, str2: str) -> int:
+        if not str1: return float('inf')
+        if not str2: return float('inf')
+
+        return lev.distance(str1, str2)
+  
+    '''
+        Find similarity of two short phrases
+        Return float from 0 to 1
+    '''
+    def similarity(self, str1: str, str2: str) -> float:
+        if not str1: return 0
+        if not str2: return 0
+        
+        max_len = max(len(str1), len(str2))
+        distance_norm = lev.distance(str1, str2) / max_len
+        similarity = 1 - distance_norm
+
+        return similarity
+
+
 '''Compares texts using pre-trained language model.'''
 class TextComparatorLM:
 
@@ -33,9 +64,16 @@ class TextComparatorLM:
         encoding = pickle.dumps(encoding)
         return encoding
 
-    def similarity(self, encoding1: bytes, encoding2: bytes) -> float:
-        encoding1 = pickle.loads(encoding1)
-        encoding2 = pickle.loads(encoding2)
+    def similarity(self, str1: Union[bytes, str], str2: Union[bytes, str]) -> float:
+        if type(str1) == bytes:
+            encoding1 = pickle.loads(str1)
+        else:
+            encoding1 = self.encoder.encode(str1, convert_to_tensor=True)
+
+        if type(str2) == bytes:
+            encoding2 = pickle.loads(str2)
+        else:
+            encoding2 = self.encoder.encode(str2, convert_to_tensor=True)
 
         similarity = util.pytorch_cos_sim(encoding1, encoding2)
         similarity = similarity.item()
@@ -85,38 +123,3 @@ class ImageComparator:
         similarity = similarity.item()
         return similarity
 
-'''Compares texts using Levenstein Distance.'''
-class TextComparatorLD:
-
-    def __init__(self):
-        pass
-
-    def encode(self):
-        pass
-
-    def distance(self, str1: str, str2: str) -> int:
-        if not str1: return float('inf')
-        if not str2: return float('inf')
-
-        return lev.distance(str1, str2)
-  
-    '''
-        Find similarity of two short phrases
-        Return float from 0 to 1
-    '''
-    def similarity(self, str1: str, str2: str) -> float:
-        if not str1: return 0
-        if not str2: return 0
-        
-        max_len = max(len(str1), len(str2))
-        distance_norm = lev.distance(str1, str2) / max_len
-        similarity = 1 - distance_norm
-
-        return similarity
-
-
-# if __name__ == "__main__":
-#     doc = ''
-#     query = ''
-#     finder = KeywordFinder()
-#     print(finder.find_in_doc(doc=doc, query=query, threshold=0.7))

@@ -7,11 +7,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app.storage import TextStorage, ImageStorage
-from app.storage import Text as StorageText
-from app.comparator import TextComparatorLD, TextComparatorLM, ImageComparator
+from app.comparator import Comparator, TextComparatorLD, TextComparatorLM, ImageComparator
 
 import heapq
-import json
 import requests
 import asyncio
 import tqdm
@@ -23,22 +21,23 @@ import tqdm
 
 app = FastAPI()
 
-app.mount("/images", StaticFiles(directory="app/images"), name="images")
+app.mount("/images", StaticFiles(directory="storage/images"), name="images")
 
-txt_storage = TextStorage('app/texts.json')
-img_storage = ImageStorage('app/images')
+txt_storage = TextStorage('storage/texts.json')
+img_storage = ImageStorage('storagge/images')
 
-txt_similarity_lev = TextComparatorLD()
-txt_similarity_tr = TextComparatorLM()
+txt_similarity = TextComparatorLD()
+# txt_similarity = TextComparatorLM()
 
 img_similarity = ImageComparator()
 
-
+'''Request body for /search-text'''
 class SearchTextBody(BaseModel):
     text: str
     topk: Optional[int] = -1
-    threshold: Optional[float] = 0.0
+    threshold: Optional[float] = 0.5
 
+'''Request body for /add-text'''
 class AddTextBody(BaseModel):
     text: Union[str, List[str]] = []
 
@@ -83,11 +82,15 @@ async def search_text(search_query: SearchTextBody):
     query_message = search_query.text
 
     for text in txt_storage:
-        occurrences = find_in_doc(doc=text.body, query=query_message, threshold=search_query.threshold)
+        occurrences = find_in_doc(doc=text, 
+                                query=query_message, 
+                                comparator=txt_similarity, 
+                                threshold=search_query.threshold)
 
         if occurrences:
             max_similarity = max([occ['similarity'] for occ in occurrences])
             ranks.append({
+                            'text': text,
                             'similarity': max_similarity,
                             'occurrences': occurrences
                         })
@@ -115,11 +118,9 @@ async def add_text(body: AddTextBody):
 async def add_text_helper(texts: List[str]):
     print("Encoding texts")
     for text in tqdm.tqdm(texts):
-        try:
-            encoding = txt_similarity_tr.encode(text)
-            txt_storage.append(StorageText(text, encoding))
-        except Exception as err:
-            print(err)
+        # any pre-processing needed for texts can be written here
+        txt_storage.append(text)
+
 
 # @app.post("/encode-posts", status_code=status.HTTP_201_CREATED)
 # async def encode_posts(posts: Union[List[Post], Post]):
@@ -219,10 +220,10 @@ def download_image(url: str) -> Image:
     return Image.open(resp.raw)
 
 '''
-    Given document and query phrase, return all 
-    parts of document with more similarity than threshold
+    Given document and query phrase, searches for phrase in document.
+    returns all parts of document with more similarity than threshold.
 '''
-def find_in_doc(doc: str, query: str, threshold: float = 0.7) -> List[Dict]:
+def find_in_doc(doc: str, query: str, comparator: Comparator, threshold: float) -> List[Dict]:
     result = []
     cur_start = 0
     cur_end = 0
@@ -235,7 +236,7 @@ def find_in_doc(doc: str, query: str, threshold: float = 0.7) -> List[Dict]:
             break
 
     while cur_end <= len(doc):
-        similarity = txt_similarity_lev.similarity(doc[cur_start:cur_end], query)
+        similarity = comparator.similarity(doc[cur_start:cur_end], query)
         if similarity > threshold:
             result.append({
                             'similarity': similarity,
