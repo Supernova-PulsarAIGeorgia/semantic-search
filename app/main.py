@@ -1,12 +1,12 @@
-from cgitb import text
-from typing import List, Optional, Tuple, Union, Dict
-from PIL import Image as Image
+from typing import List, Optional, Union, Dict
+from PIL import Image
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, UploadFile, status
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app.storage import TextStorage, ImageStorage
+from app.storage import StorageImage
 from app.comparator import Comparator, TextComparatorLD, TextComparatorLM, ImageComparator
 
 import heapq
@@ -14,22 +14,17 @@ import requests
 import asyncio
 import tqdm
 
-# with open('app/config.json') as f: 
-#     config = json.load(f)
-
-# LM_NAME = config['language_model']['name']
-
 app = FastAPI()
 
 app.mount("/images", StaticFiles(directory="storage/images"), name="images")
 
 txt_storage = TextStorage('storage/texts.json')
-img_storage = ImageStorage('storagge/images')
+img_storage = ImageStorage('storage/images')
 
-txt_similarity = TextComparatorLD()
-# txt_similarity = TextComparatorLM()
+txt_comparator = TextComparatorLD()
+# txt_comparator = TextComparatorLM()
 
-img_similarity = ImageComparator()
+img_comparator = ImageComparator()
 
 '''Request body for /search-text'''
 class SearchTextBody(BaseModel):
@@ -37,38 +32,19 @@ class SearchTextBody(BaseModel):
     topk: Optional[int] = -1
     threshold: Optional[float] = 0.5
 
-'''Request body for /add-text'''
-class AddTextBody(BaseModel):
-    text: Union[str, List[str]] = []
-
-class Image(BaseModel):
-    pass
-
-
-# class MediaType(Enum):
-#     link = 'link'
-#     photo = 'photo'
-#     video = 'video'
-#     album = 'album'
+'''Request body for /search-text'''
+class SearchImageBody(BaseModel):
+    id: int
+    topk: Optional[int] = -1
+    threshold: Optional[float] = 0.5
 
 
-# class Attachment(BaseModel):
-#     media_type: MediaType
-#     thumbnail: Optional[str] = ""
-
-
-# class Post(BaseModel):
-#     post_id: str
-#     page_id: str
-#     message: Optional[str] = ""
-#     attachment: Optional[Attachment] = None
-
-
-# class PostSearchQuery(BaseModel):
-#     post: Post
-#     topk: Optional[int] = -1
-#     threshold: Optional[float] = 0.0
-#     page_ids: Optional[List[str]] = []
+@app.post("/add-text", status_code=status.HTTP_201_CREATED)
+async def add_text(texts: Union[str, List[str]]):
+    if type(texts) == str:
+        texts = [texts]
+    asyncio.create_task(add_text_helper(texts=texts))
+    return "Success"
 
 
 @app.get("/")
@@ -84,7 +60,7 @@ async def search_text(search_query: SearchTextBody):
     for text in txt_storage:
         occurrences = find_in_doc(doc=text, 
                                 query=query_message, 
-                                comparator=txt_similarity, 
+                                comparator=txt_comparator, 
                                 threshold=search_query.threshold)
 
         if occurrences:
@@ -102,112 +78,62 @@ async def search_text(search_query: SearchTextBody):
         topk = min(topk, len(ranks))
 
     result = heapq.nlargest(topk, ranks, key=lambda x: x['similarity'])
-    print(result)
 
     return result
 
 
-@app.post("/add-text", status_code=status.HTTP_201_CREATED)
-async def add_text(body: AddTextBody):
-    texts = body.text
-    if type(texts) == str:
-        texts = [texts]
-    asyncio.create_task(add_text_helper(texts=texts))
-    return "Success"
+@app.post("/add-image-file")
+async def add_image_file(image_file: UploadFile):
+    return "Not Implemented"
+
+
+@app.post("/add-image-url")
+async def add_image_url(image_url: Union[str, List[str]]):
+    if type(image_url) == str:
+        image_url = [image_url]
+    ids = []
+    for url in image_url:
+        image = download_image(url)
+        encoding = img_comparator.encode(image=image)
+        id = img_storage.append(image=StorageImage(image=image, encoding=encoding))
+        ids.append(id)
+    return ids
+
+
+@app.get("/search-image")
+async def search_image(search_query: SearchImageBody):
+    query_image = img_storage.get(search_query.id)
+
+    if not query_image:
+        raise HTTPException(status_code=404, detail=f"Could not find image: '{search_query.id}'") 
+
+    query_image_encoding = query_image.encoding
+    
+    ranks = []
+
+    for image in img_storage:
+        similarity = img_comparator.similarity(query_image_encoding, image.encoding)
+        ranks.append({
+                        'id': image.id,
+                        'similarity': similarity
+                    })
+
+    topk = search_query.topk
+    if topk == -1:
+        topk = len(ranks)
+    else:
+        topk = min(topk, len(ranks))
+
+    result = heapq.nlargest(topk, ranks, key=lambda x: x['similarity'])
+
+    return result
+
 
 async def add_text_helper(texts: List[str]):
     print("Encoding texts")
     for text in tqdm.tqdm(texts):
         # any pre-processing needed for texts can be written here
         txt_storage.append(text)
-
-
-# @app.post("/encode-posts", status_code=status.HTTP_201_CREATED)
-# async def encode_posts(posts: Union[List[Post], Post]):
-#     asyncio.create_task(encode_posts_helper(posts=posts))
-#     return "Success"
-
-# async def encode_posts_helper(posts: Union[List[Post], Post]):
-#     if type(posts) == Post:
-#         posts = [posts]
-
-#     dbposts = []
-
-#     print("Encoding posts")
-#     for post in tqdm.tqdm(posts):
-#         try:
-#             dbpost = DBPost(page_id=post.page_id, post_id=post.post_id)
-
-#             if post.message:
-#                 dbpost.message = post.message
-#                 encoding = txt_similarity_tr.encode(post.message)
-#                 dbpost.message_encoding = encoding
-
-#             if post.attachment:
-#                 img = download_image(post.attachment.thumbnail)
-#                 encoding = img_similarity.encode(img)
-#                 dbpost.image_encoding = encoding
-
-#             dbposts.append(dbpost)
-#         except Exception as err:
-#             print(err)
-    
-#     print("Inserting posts in database")
-#     database.put_posts(posts=dbposts)
-
-
-# @app.post("/search-post")
-# async def search_post(search_query: PostSearchQuery):
-#     query_msg_enc, query_img_enc = get_encodings(search_query.post)
-#     posts= database.get_posts(search_query.page_ids)
-#     ranks = []
-
-#     # rank posts
-#     for post in posts:
-#         msg_sim = 0
-#         img_sim = 0
-
-#         if post.message_encoding and query_msg_enc:
-#             msg_sim = txt_similarity_tr.similarity(post.message_encoding, query_msg_enc)
-#         if post.image_encoding and query_img_enc:
-#             img_sim = img_similarity.similarity(post.image_encoding, query_img_enc)
-
-#         # score = max(msg_sim, img_sim)
-#         # score = img_sim
-#         score = MESSAGE_WEIGHT * msg_sim + IMAGE_WEIGHT * img_sim
-
-#         ranks.append({
-#                         'similarity': score,
-#                         'message_similarity': msg_sim,
-#                         'image_similarity': img_sim,
-#                         'message': post.message,
-#                         'post_id': post.post_id,
-#                         'page_id': post.page_id,
-#                     })
-
-#     # filter posts with similarity threshold
-#     ranks = [x for x in ranks if x['similarity'] > 0.65] # search_query.threshold]
-
-#     # pick topk posts
-#     topk = search_query.topk
-#     if topk == -1:
-#         topk = len(ranks)
-#     else:
-#         topk = min(topk, len(ranks))
-
-#     result = heapq.nlargest(topk, ranks, key=lambda x: x['similarity'])
-
-#     return result
-
-
-# def get_encodings(post: Post)-> Tuple[bytes,bytes]:
-
-#     dbpost_it = database.get_post_encodings(post_id=post.post_id)
-#     try: 
-#         dbpost = next(dbpost_it)
-#         return dbpost.message_encoding, dbpost.image_encoding
-#     except StopIteration: 
-#         raise HTTPException(status_code=404, detail=f"Could not find post: '{post.post_id}'")
 
 
 def download_image(url: str) -> Image:
@@ -218,6 +144,7 @@ def download_image(url: str) -> Image:
             detail=f"Could not download image from: {url}")
 
     return Image.open(resp.raw)
+
 
 '''
     Given document and query phrase, searches for phrase in document.
