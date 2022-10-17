@@ -8,14 +8,19 @@ This project implements a semantic search for text and images. Instead of search
 ## Usage
 ---
 
-Search is implemented as REST API. It contains Gerogian proverbs and sample image dataset for searching. User can add new sentences, new image, seach similar images of the one already in storage by its id or search for a keyword in all texts.
-You can run server by installing all of the requirements described in [requirements.txt](https://github.com/Supernova-PulsarAIGeorgia/semantic-search/blob/main/requirements.txt) and run FastAPI server with ```uvicorn app.main:app```. Alternatively you can run application in docker with running following comands in project root:
-```docker build . -t semantic-search```
-```docker run -p 8080:8080 semantic-search```
+Search is implemented as REST API. It contains Georgian proverbs and a sample image dataset for searching. Users can add new sentences, and new images, search for similar images to the one already in storage by its id, or search for a keyword in all texts. You can run the server by installing all of the requirements described in [requirements.txt](https://github.com/Supernova-PulsarAIGeorgia/semantic-search/blob/main/requirements.txt) and run the FastAPI server with:
+```sh
+uvicorn app.main:app
+```
+Alternatively, you can run the application in docker by running the following commands in the project root:
+```sh
+docker build . -t semantic-search
+docker run -p 8080:8080 semantic-search
+```
 
 ## API
 ---
-reference
+Please refer to [API Documentation](https://github.com/Supernova-PulsarAIGeorgia/semantic-search/blob/main/api_docs.md).
 
 ## Structure
 ---
@@ -28,22 +33,28 @@ The project is divided into conceptual code and an actual search engine.
 [Image Similarity.ipynb]() explores different ways of comparing two images and searching for similar pictures in the sample dataset.
 
 ### App
-Implements actual search engine. Currently this part is imjplemented as REST API. 
+Implements actual search engine. Currently, this part is implemented as REST API.
+
+[main](https://github.com/Supernova-PulsarAIGeorgia/semantic-search/blob/main/app/main.py) implements the server and searching.
+
+[comparator](https://github.com/Supernova-PulsarAIGeorgia/semantic-search/blob/main/app/comparator.py) contains comparator classes for both texts and images.
+
+[storage](https://github.com/Supernova-PulsarAIGeorgia/semantic-search/blob/main/app/storage.py) contains a class for storing texts and images. Other storage or database integrations can be implemented here.
 
 ## Contribute
 ---
 Thanks for taking the time to contribute to this project! There are many ways you can help out.
 
 ### Questions
-If you have a question that needs an answer, create an issue, and label it as a question.
+If you have a question, create an issue, and label it as a question.
 
 ### Issues for bugs or feature requests
-If you encounter any bugs in the code, or want to request a new feature or enhancement, please create an issue to report it. Kindly add a label to indicate what type of issue it is.
+If you encounter any bugs in the code or want to request a new feature, please create an issue to report it and add a label to indicate what type of issue it is.
 
 ### Contribute Code
 We welcome your pull requests for bug fixes. To implement something new, please create an issue first so we can discuss it together.
 
-When your code is ready to be submitted, submit a pull request to begin the code review process. We have added a pull request template on our project.
+When your code is ready to be submitted, submit a pull request to begin the code review process. We have added a pull request template to our project.
 
 
 ## License
