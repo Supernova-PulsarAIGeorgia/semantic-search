@@ -8,7 +8,7 @@
 
 **Auth required** : NO
 
-## Success Response
+### Success Response
 
 **Code** : `200 OK`
 
@@ -40,11 +40,11 @@ Add new sentences to storage.
 "გველსა ხვრელით ამოიყვანს"
 ```
 
-## Success Response
+### Success Response
 
 **Code** : `201 CREATED`
 
-## Error Response
+### Error Response
 
 **Code** : `422 Unprocessable Entity`
 
@@ -76,11 +76,11 @@ Searc keywords in texts.
 }
 ```
 
-## Success Response
+### Success Response
 
 **Code** : `200 OK`
 
-## Error Response
+### Error Response
 
 **Code** : `422 Unprocessable Entity`
 
@@ -106,11 +106,11 @@ Add new image to the storage.
 ["image_url"]
 ```
 
-## Success Response
+### Success Response
 
 **Code** : `201 CREATED`
 
-## Error Response
+### Error Response
 
 **Code** : `422 Unprocessable Entity`
 
@@ -142,10 +142,10 @@ Search similar images according to existing image.
 }
 ```
 
-## Success Response
+### Success Response
 
 **Code** : `200 OK`
 
-## Error Response
+### Error Response
 
 **Code** : `422 Unprocessable Entity`
