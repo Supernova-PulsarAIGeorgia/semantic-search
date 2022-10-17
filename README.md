@@ -27,10 +27,10 @@ Please refer to [API Documentation](https://github.com/Supernova-PulsarAIGeorgia
 The project is divided into conceptual code and an actual search engine.
 
 ### Text Similarity
-[Text Similarity.ipynb]() contains experimentation on computing the similarity of two texts and finding similar texts in a given corpus.
+[Text Similarity.ipynb](https://github.com/Supernova-PulsarAIGeorgia/semantic-search/blob/main/Text%20Similarity.ipynb) contains experimentation on computing the similarity of two texts and finding similar texts in a given corpus.
 
 ### Image Similarity
-[Image Similarity.ipynb]() explores different ways of comparing two images and searching for similar pictures in the sample dataset.
+[Image Similarity.ipynb](https://github.com/Supernova-PulsarAIGeorgia/semantic-search/blob/main/Image%20Similarity.ipynb) explores different ways of comparing two images and searching for similar pictures in the sample dataset.
 
 ### App
 Implements actual search engine. Currently, this part is implemented as REST API.
