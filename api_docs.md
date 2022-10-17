@@ -1,7 +1,6 @@
 # Semantic Search API Documentation
 ---
 ## Root
----
 
 **URL** : `/`
 
@@ -15,7 +14,6 @@
 
 ---
 ## Add Text
----
 
 Add new sentences to storage.
 
@@ -52,7 +50,6 @@ Add new sentences to storage.
 
 ---
 ## Search Text
----
 
 Searc keywords in texts.
 
@@ -89,7 +86,6 @@ Searc keywords in texts.
 
 ---
 ## Add Image
----
 
 Add new image to the storage.
 
@@ -120,7 +116,6 @@ Add new image to the storage.
 
 ---
 ## Search Image
----
 
 Search similar images according to existing image.
 
