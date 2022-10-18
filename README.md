@@ -49,8 +49,13 @@ If you encounter any bugs in the code or want to request a new feature, please c
 ### Contribute Code
 We welcome your pull requests for bug fixes. To implement something new, please create an issue first so we can discuss it together.
 
-When your code is ready to be submitted, submit a pull request to begin the code review process. We have added a pull request template to our project.
+When your code is ready to be submitted, submit a pull request to begin the code review process.
 
+### Areas of Improvement
+
+* At the moment storage class reads texts and images from static files. New data is added but not saved after the application shutdown. This behavior can be improved by implementing persistent storage.
+* Instead of using static files, database integrations can also be implemented in the storage module.
+* Search Engine works by computing the similarity between a query and all entries in the corpus. For large corpus, this will take too long. You can use more advanced algorithms to increase speed. Please refer to this [article](https://www.sbert.net/examples/applications/semantic-search/README.html).
 
 ## License
 This project is licensed under the terms of the MIT open source license. Please refer to [LICENSE](https://github.com/Supernova-PulsarAIGeorgia/semantic-search/blob/main/LICENSE) for the full terms.
