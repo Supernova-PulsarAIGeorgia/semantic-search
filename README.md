@@ -51,7 +51,7 @@ We welcome your pull requests for bug fixes. To implement something new, please 
 
 When your code is ready to be submitted, submit a pull request to begin the code review process.
 
-### Areas of Improvement
+## Areas of Improvement
 
 * At the moment storage class reads texts and images from static files. New data is added but not saved after the application shutdown. This behavior can be improved by implementing persistent storage.
 * Instead of using static files, database integrations can also be implemented in the storage module.
